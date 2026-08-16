@@ -46,11 +46,13 @@ class Command(BaseCommand):
                 phone_number='+998911111111', full_name='Aziz Usta',
                 password='barber12345', role=CustomUser.Role.BARBER
             )
-            profile = BarberProfile.objects.create(
-                user=barber_user, bio='10 yillik tajribaga ega usta.',
-                experience_years=10, rating=4.9,
-                work_start_time=datetime.time(9, 0), work_end_time=datetime.time(19, 0),
-            )
+            profile, _ = BarberProfile.objects.get_or_create(user=barber_user)
+            profile.bio = '10 yillik tajribaga ega usta.'
+            profile.experience_years = 10
+            profile.rating = 4.9
+            profile.work_start_time = datetime.time(9, 0)
+            profile.work_end_time = datetime.time(19, 0)
+            profile.save()
             profile.services.set([s1, s2, s3])
             self.stdout.write(self.style.SUCCESS("Namunaviy usta yaratildi: +998911111111 / barber12345"))
 
