@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Royal Barber — Style is King{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="relative overflow-hidden">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 text-center">
+        <p class="text-gold-500 tracking-[0.3em] text-sm font-semibold mb-4">STYLE IS KING</p>
+        <h1 class="font-display font-800 text-5xl sm:text-6xl leading-tight mb-6">
+            <span class="gold-text">Royal Barber</span><br>
+            <span class="text-white">Premium sartaroshxona</span>
+        </h1>
+        <p class="text-gray-400 max-w-xl mx-auto mb-10">
+            Professional ustalar, sifatli xizmat va qulay onlayn bron tizimi — barchasi bir joyda.
+        </p>
+        <div class="flex justify-center gap-4">
+            <a href="{% url 'bookings:booking_create' %}"
+               class="gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition">
+                Hoziroq bron qiling
+            </a>
+            <a href="{% url 'services:service_list' %}"
+               class="border border-yellow-600/40 text-gold-500 font-semibold px-8 py-4 rounded-lg hover:bg-yellow-600/10 transition">
+                Xizmatlarni ko'rish
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- Services -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h2 class="font-display font-700 text-3xl text-center mb-2">Bizning <span class="gold-text">Xizmatlar</span></h2>
+    <p class="text-gray-500 text-center mb-12">Har bir xizmat yuqori sifat va e'tibor bilan bajariladi</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for service in services %}
+        <a href="{{ service.get_absolute_url }}"
+           class="block bg-black/40 border border-yellow-600/20 rounded-xl p-6 hover:border-yellow-500/60 transition group">
+            <h3 class="font-display font-700 text-xl text-white group-hover:text-gold-500 transition mb-2">{{ service.name }}</h3>
+            <p class="text-gray-500 text-sm mb-4">{{ service.description|truncatewords:15 }}</p>
+            <div class="flex justify-between items-center text-sm">
+                <span class="text-gold-500 font-semibold">{{ service.price }} so'm</span>
+                <span class="text-gray-500">{{ service.duration_minutes }} daq</span>
+            </div>
+        </a>
+        {% empty %}
+        <p class="text-gray-500 col-span-3 text-center">Hozircha xizmatlar qo'shilmagan.</p>
+        {% endfor %}
+    </div>
+</section>
+
+<!-- Barbers -->
+<section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h2 class="font-display font-700 text-3xl text-center mb-2">Bizning <span class="gold-text">Ustalar</span></h2>
+    <p class="text-gray-500 text-center mb-12">Tajribali va professional sartaroshlar jamoasi</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {% for barber in barbers %}
+        <a href="{{ barber.get_absolute_url }}"
+           class="block bg-black/40 border border-yellow-600/20 rounded-xl p-6 text-center hover:border-yellow-500/60 transition group">
+            {% if barber.user.avatar %}
+                <img src="{{ barber.user.avatar.url }}" class="w-20 h-20 rounded-full object-cover mx-auto mb-4 border-2 border-yellow-600/40">
+            {% else %}
+                <div class="w-20 h-20 rounded-full bg-yellow-600/20 mx-auto mb-4 flex items-center justify-center text-2xl font-display text-gold-500">
+                    {{ barber.user.full_name|slice:":1"|upper }}
+                </div>
+            {% endif %}
+            <h3 class="font-semibold text-white group-hover:text-gold-500 transition">{{ barber.user.full_name }}</h3>
+            <p class="text-gray-500 text-sm">{{ barber.experience_years }} yillik tajriba</p>
+            <p class="text-gold-500 text-sm mt-1">★ {{ barber.rating }}</p>
+        </a>
+        {% empty %}
+        <p class="text-gray-500 col-span-4 text-center">Hozircha ustalar qo'shilmagan.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

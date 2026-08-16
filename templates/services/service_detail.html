@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}{{ service.name }} — Royal Barber{% endblock %}
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    {% if service.image %}
+        <img src="{{ service.image.url }}" class="w-full h-72 object-cover rounded-xl mb-8 border border-yellow-600/20">
+    {% endif %}
+    <p class="text-gold-500 text-sm mb-2">{{ service.category.name }}</p>
+    <h1 class="font-display font-800 text-4xl mb-4 text-white">{{ service.name }}</h1>
+    <p class="text-gray-400 leading-relaxed mb-6">{{ service.description }}</p>
+    <div class="flex gap-8 mb-8 text-lg">
+        <div><span class="text-gray-500 text-sm block">Narxi</span><span class="text-gold-500 font-semibold">{{ service.price }} so'm</span></div>
+        <div><span class="text-gray-500 text-sm block">Davomiyligi</span><span class="text-white">{{ service.duration_minutes }} daqiqa</span></div>
+    </div>
+    <a href="{% url 'bookings:booking_create' %}?service={{ service.pk }}"
+       class="inline-block gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition">
+        Ushbu xizmatga bron qilish
+    </a>
+
+    {% if request.user.is_authenticated and request.user.is_staff or request.user.role == 'admin' %}
+    <div class="mt-8 flex gap-4">
+        <a href="{% url 'services:service_edit' service.pk %}" class="text-sm text-gray-400 hover:text-gold-500">Tahrirlash</a>
+        <a href="{% url 'services:service_delete' service.pk %}" class="text-sm text-gray-400 hover:text-red-400">O'chirish</a>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

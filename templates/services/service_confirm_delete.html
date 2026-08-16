@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}O'chirishni tasdiqlash{% endblock %}
+{% block content %}
+<section class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+    <h1 class="font-display text-2xl text-white mb-4">"{{ object.name }}" xizmatini o'chirmoqchimisiz?</h1>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="bg-red-600 text-white font-semibold px-6 py-3 rounded-lg hover:bg-red-700 transition mr-4">
+            Ha, o'chirish
+        </button>
+        <a href="{% url 'services:service_list' %}" class="text-gray-400 hover:text-gold-500">Bekor qilish</a>
+    </form>
+</section>
+{% endblock %}

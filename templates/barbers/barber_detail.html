@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}{{ barber.user.full_name }} — Royal Barber{% endblock %}
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="flex items-center gap-6 mb-8">
+        {% if barber.user.avatar %}
+            <img src="{{ barber.user.avatar.url }}" class="w-28 h-28 rounded-full object-cover border-2 border-yellow-600/40">
+        {% else %}
+            <div class="w-28 h-28 rounded-full bg-yellow-600/20 flex items-center justify-center text-4xl font-display text-gold-500">
+                {{ barber.user.full_name|slice:":1"|upper }}
+            </div>
+        {% endif %}
+        <div>
+            <h1 class="font-display font-800 text-3xl text-white">{{ barber.user.full_name }}</h1>
+            <p class="text-gray-500">{{ barber.experience_years }} yillik tajriba · ★ {{ barber.rating }}</p>
+            <p class="text-gray-500 text-sm">Ish vaqti: {{ barber.work_start_time }} - {{ barber.work_end_time }}</p>
+        </div>
+    </div>
+
+    {% if barber.bio %}
+    <p class="text-gray-400 leading-relaxed mb-8">{{ barber.bio }}</p>
+    {% endif %}
+
+    <h2 class="font-display text-xl text-gold-500 mb-4">Ko'rsatadigan xizmatlari</h2>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        {% for service in barber.services.all %}
+        <div class="bg-black/40 border border-yellow-600/20 rounded-lg p-4">
+            <p class="text-white font-medium">{{ service.name }}</p>
+            <p class="text-gray-500 text-sm">{{ service.price }} so'm · {{ service.duration_minutes }} daq</p>
+        </div>
+        {% empty %}
+        <p class="text-gray-500">Xizmatlar hali belgilanmagan.</p>
+        {% endfor %}
+    </div>
+
+    <a href="{% url 'bookings:booking_create' %}?barber={{ barber.pk }}"
+       class="inline-block gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition">
+        Ushbu ustaga bron qilish
+    </a>
+</section>
+{% endblock %}

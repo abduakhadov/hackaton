@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Mening bronlarim — Royal Barber{% endblock %}
+{% block content %}
+<section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="font-display font-800 text-3xl"><span class="gold-text">Mening bronlarim</span></h1>
+        <a href="{% url 'bookings:booking_create' %}"
+           class="gold-gradient text-black font-semibold px-5 py-2.5 rounded-lg text-sm hover:opacity-90 transition">
+            + Yangi bron
+        </a>
+    </div>
+
+    <div class="space-y-4">
+        {% for appt in appointments %}
+        <div class="bg-black/40 border border-yellow-600/20 rounded-xl p-6 flex flex-wrap justify-between items-center gap-4">
+            <div>
+                <h3 class="text-white font-semibold text-lg">{{ appt.service.name }}</h3>
+                <p class="text-gray-500 text-sm">Usta: {{ appt.barber.user.full_name }}</p>
+                <p class="text-gray-500 text-sm">{{ appt.date }} · {{ appt.start_time }} - {{ appt.end_time }}</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <span class="text-xs px-3 py-1 rounded-full
+                    {% if appt.status == 'confirmed' %} bg-green-900/30 text-green-400
+                    {% elif appt.status == 'pending' %} bg-yellow-900/30 text-yellow-400
+                    {% elif appt.status == 'completed' %} bg-blue-900/30 text-blue-400
+                    {% else %} bg-red-900/30 text-red-400 {% endif %}">
+                    {{ appt.get_status_display }}
+                </span>
+                {% if appt.status == 'pending' or appt.status == 'confirmed' %}
+                <a href="{% url 'bookings:booking_edit' appt.pk %}" class="text-sm text-gray-400 hover:text-gold-500">Tahrirlash</a>
+                <a href="{% url 'bookings:booking_cancel' appt.pk %}" class="text-sm text-gray-400 hover:text-red-400">Bekor qilish</a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="text-gray-500 text-center py-10">Sizda hali bronlar yo'q.</p>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

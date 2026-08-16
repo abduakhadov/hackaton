@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Usta profilini tahrirlash — Royal Barber{% endblock %}
+{% block content %}
+<section class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <h1 class="font-display font-800 text-3xl mb-8 text-center"><span class="gold-text">Usta profilini tahrirlash</span></h1>
+    <form method="post" class="space-y-5 bg-black/40 border border-yellow-600/20 rounded-xl p-8">
+        {% csrf_token %}
+        {% for field in form %}
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ field.label }}</label>
+            {{ field }}
+            {% for error in field.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+        {% endfor %}
+        <button type="submit" class="w-full gold-gradient text-black font-semibold py-3 rounded-lg hover:opacity-90 transition">
+            Saqlash
+        </button>
+    </form>
+</section>
+{% endblock %}
