@@ -33,6 +33,11 @@ class SitemapXmlView(TemplateView):
     content_type = 'application/xml'
 
 
+class GoogleVerificationView(TemplateView):
+    template_name = 'google7902dc69f8b402cd.html'
+    content_type = 'text/html'
+
+
 class ContactView(TemplateView):
     template_name = 'main/contact.html'
 
