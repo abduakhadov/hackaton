@@ -145,26 +145,34 @@ class TelegramWebhookView(View):
     """
 
     def post(self, request):
+        import logging
+        logger = logging.getLogger('django')
+
         try:
             data = json.loads(request.body)
+            logger.info(f"[TG Webhook] Received data: {data}")
+
             message = data.get('message') or data.get('edited_message')
             if not message:
                 return JsonResponse({'ok': True})
 
             chat_id = message['chat']['id']
             text = message.get('text', '').strip()
+            logger.info(f"[TG Webhook] chat_id={chat_id}, text={repr(text)}")
 
             if text.startswith('/start'):
                 parts = text.split(' ', 1)
                 start_param = parts[1].strip() if len(parts) > 1 else ''
+                logger.info(f"[TG Webhook] start_param={repr(start_param)}")
 
                 if start_param:
-                    # Telefon raqamni tiklash
                     import urllib.parse
                     phone_digits = urllib.parse.unquote(start_param)
-                    # Telefon raqamni formatlash: raqamlar keldi, '+' qo'shamiz
+                    # Telefon raqamni formatlash: '+' qo'shamiz
                     if not phone_digits.startswith('+'):
                         phone_digits = '+' + phone_digits
+
+                    logger.info(f"[TG Webhook] Looking for OTP with phone={phone_digits}")
 
                     # Eng yangi ishlatilmagan OTP ni topamiz
                     try:
@@ -174,11 +182,15 @@ class TelegramWebhookView(View):
                             telegram_chat_id__isnull=True,
                         ).latest('created_at')
 
+                        logger.info(f"[TG Webhook] Found OTP id={otp.pk}, code={otp.code}")
+
                         otp.telegram_chat_id = chat_id
                         otp.save()
 
-                        send_otp(chat_id, otp.code)
+                        result = send_otp(chat_id, otp.code)
+                        logger.info(f"[TG Webhook] send_otp result={result}")
                     except TelegramOTP.DoesNotExist:
+                        logger.warning(f"[TG Webhook] No OTP found for phone={phone_digits}")
                         from .telegram_utils import send_message
                         send_message(
                             chat_id,
@@ -191,8 +203,9 @@ class TelegramWebhookView(View):
                         "👋 Salom! Men <b>Royal Barber</b> tasdiqlash botiman.\n\n"
                         "Ro'yxatdan o'tish uchun saytga o'ting va ko'rsatilgan havolani bosing."
                     )
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger('django').error(f"[TG Webhook] Exception: {e}", exc_info=True)
 
         return JsonResponse({'ok': True})
 
