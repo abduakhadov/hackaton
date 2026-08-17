@@ -155,9 +155,9 @@ class VerifyOTPView(View):
         otp.is_used = True
         otp.save()
 
-        # Session tozalash
-        del request.session['pending_otp_id']
-        del request.session['pending_phone']
+        # Session tozalash (xavfsiz pop orqali)
+        request.session.pop('pending_otp_id', None)
+        request.session.pop('pending_phone', None)
 
         login(request, user)
         messages.success(request, "Ro'yxatdan muvaffaqiyatli o'tdingiz! Xush kelibsiz!")
