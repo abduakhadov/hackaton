@@ -118,10 +118,44 @@ class BarberScheduleView(LoginRequiredMixin, UserPassesTestMixin, ListView):
     context_object_name = 'appointments'
 
     def test_func(self):
-        return hasattr(self.request.user, 'barber_profile')
+        return hasattr(self.request.user, 'barber_profile') or self.request.user.is_staff or self.request.user.role == 'admin'
 
     def get_queryset(self):
-        return Appointment.objects.filter(
-            barber=self.request.user.barber_profile
-        ).select_related('client', 'service').order_by('-date', '-start_time')
+        if hasattr(self.request.user, 'barber_profile'):
+            return Appointment.objects.filter(
+                barber=self.request.user.barber_profile
+            ).select_related('client', 'service').order_by('-date', '-start_time')
+        return Appointment.objects.all().select_related('barber__user', 'client', 'service').order_by('-date', '-start_time')
+
+
+from django.views import View
+from django.shortcuts import get_object_or_404, redirect
+
+
+class UpdateBookingStatusView(LoginRequiredMixin, View):
+    """Usta o'ziga tushgan bron holatini o'zgartiradi (kutilmoqda -> tasdiqlandi, bajarildi, bekor qilindi)."""
+
+    def post(self, request, pk):
+        if not (request.user.is_barber or request.user.is_staff or request.user.role == 'admin'):
+            messages.error(request, "Faqat usta yoki admin bron holatini o'zgartira oladi.")
+            return redirect('bookings:my_bookings')
+
+        barber_profile = getattr(request.user, 'barber_profile', None)
+        if request.user.is_staff or request.user.role == 'admin':
+            appt = get_object_or_404(Appointment, pk=pk)
+        else:
+            if not barber_profile:
+                messages.error(request, "Usta profili topilmadi.")
+                return redirect('bookings:my_bookings')
+            appt = get_object_or_404(Appointment, pk=pk, barber=barber_profile)
+
+        new_status = request.POST.get('status')
+        if new_status in Appointment.Status.values:
+            appt.status = new_status
+            appt.save()
+            messages.success(request, f"Bron holati '{appt.get_status_display()}' ga o'zgartirildi!")
+        else:
+            messages.error(request, "Noto'g'ri holat tanlandi.")
+
+        return redirect('bookings:my_bookings')
 
