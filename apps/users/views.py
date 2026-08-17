@@ -140,12 +140,16 @@ class VerifyOTPView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class TelegramWebhookView(View):
     """
-    Telegram bot webhook — foydalanuvchi /start yozganda chat_id saqlaydi
-    va OTP kodni yuboradi.
+    Telegram bot webhook — foydalanuvchi /start yozganda yoki raqam yuborganda
+    OTP kodni zudlik bilan Telegram orqali yuboradi.
     """
 
     def post(self, request):
         import logging
+        from django.utils import timezone
+        import datetime
+        from .telegram_utils import send_message, send_otp
+
         logger = logging.getLogger('django')
 
         try:
@@ -158,51 +162,54 @@ class TelegramWebhookView(View):
 
             chat_id = message['chat']['id']
             text = message.get('text', '').strip()
-            logger.info(f"[TG Webhook] chat_id={chat_id}, text={repr(text)}")
+            contact = message.get('contact')
+            logger.info(f"[TG Webhook] chat_id={chat_id}, text={repr(text)}, contact={contact}")
 
-            if text.startswith('/start'):
+            # Telefon raqamni aniqlash
+            phone_target = ''
+            if contact and contact.get('phone_number'):
+                phone_target = contact['phone_number']
+            elif text.startswith('/start'):
                 parts = text.split(' ', 1)
-                start_param = parts[1].strip() if len(parts) > 1 else ''
-                logger.info(f"[TG Webhook] start_param={repr(start_param)}")
+                if len(parts) > 1 and parts[1].strip():
+                    phone_target = parts[1].strip()
+            elif any(c.isdigit() for c in text):
+                phone_target = ''.join(c for c in text if c.isdigit())
 
-                if start_param:
-                    import urllib.parse
-                    phone_digits = urllib.parse.unquote(start_param)
-                    # Telefon raqamni formatlash: '+' qo'shamiz
-                    if not phone_digits.startswith('+'):
-                        phone_digits = '+' + phone_digits
+            # Faqat raqamlar
+            digits_only = ''.join(c for c in phone_target if c.isdigit())
 
-                    logger.info(f"[TG Webhook] Looking for OTP with phone={phone_digits}")
+            otp = None
+            # 1. Telefon raqam bo'yicha qidirish
+            if digits_only:
+                # To'liq raqam yoki oxirgi 9 ta raqam bo'yicha
+                last9 = digits_only[-9:] if len(digits_only) >= 9 else digits_only
+                otp = TelegramOTP.objects.filter(
+                    phone_number__icontains=last9,
+                    is_used=False,
+                ).order_by('-created_at').first()
 
-                    # Eng yangi ishlatilmagan OTP ni topamiz
-                    try:
-                        otp = TelegramOTP.objects.filter(
-                            phone_number=phone_digits,
-                            is_used=False,
-                            telegram_chat_id__isnull=True,
-                        ).latest('created_at')
+            # 2. Agar telefon bo'yicha topilmasa, so'nggi 10 daqiqa ichida yaratilgan ishlatilmagan OTP ni olamiz
+            if not otp:
+                ten_mins_ago = timezone.now() - datetime.timedelta(minutes=10)
+                otp = TelegramOTP.objects.filter(
+                    is_used=False,
+                    created_at__gte=ten_mins_ago,
+                ).order_by('-created_at').first()
 
-                        logger.info(f"[TG Webhook] Found OTP id={otp.pk}, code={otp.code}")
-
-                        otp.telegram_chat_id = chat_id
-                        otp.save()
-
-                        result = send_otp(chat_id, otp.code)
-                        logger.info(f"[TG Webhook] send_otp result={result}")
-                    except TelegramOTP.DoesNotExist:
-                        logger.warning(f"[TG Webhook] No OTP found for phone={phone_digits}")
-                        from .telegram_utils import send_message
-                        send_message(
-                            chat_id,
-                            "❌ Tasdiqlash kodi topilmadi. Iltimos, saytga qaytib qaytadan ro'yxatdan o'ting."
-                        )
-                else:
-                    from .telegram_utils import send_message
-                    send_message(
-                        chat_id,
-                        "👋 Salom! Men <b>Royal Barber</b> tasdiqlash botiman.\n\n"
-                        "Ro'yxatdan o'tish uchun saytga o'ting va ko'rsatilgan havolani bosing."
-                    )
+            if otp:
+                otp.telegram_chat_id = chat_id
+                otp.save()
+                logger.info(f"[TG Webhook] Sending OTP {otp.code} to chat_id {chat_id}")
+                res = send_otp(chat_id, otp.code)
+                logger.info(f"[TG Webhook] OTP send result: {res}")
+            else:
+                logger.warning(f"[TG Webhook] No active OTP found for chat_id={chat_id}")
+                send_message(
+                    chat_id,
+                    "👋 <b>Royal Barber</b> tasdiqlash botiga xush kelibsiz!\n\n"
+                    "Iltimos, avval saytda ro'yxatdan o'ting va ko'rsatilgan havolani bosing."
+                )
         except Exception as e:
             import logging
             logging.getLogger('django').error(f"[TG Webhook] Exception: {e}", exc_info=True)
