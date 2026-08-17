@@ -72,7 +72,6 @@ class RegisterView(View):
                 'bot_link': bot_link,
                 'phone': phone,
                 'otp_id': otp.pk,
-                'otp_code': otp.code,
             })
         return render(request, self.template_name, {'form': form})
 
