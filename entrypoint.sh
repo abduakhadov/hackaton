@@ -7,19 +7,21 @@ python manage.py migrate --noinput
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
-echo "Creating superuser if not exists..."
+echo "Creating/Updating superuser..."
 python manage.py shell -c "
 from apps.users.models import CustomUser
 phone = '${DJANGO_SUPERUSER_PHONE:-+998000000000}'
 name = '${DJANGO_SUPERUSER_NAME:-Admin}'
-pwd = '${DJANGO_SUPERUSER_PASSWORD:-admin1234}'
-if not CustomUser.objects.filter(phone_number=phone).exists():
-    u = CustomUser.objects.create_superuser(phone_number=phone, full_name=name, password=pwd)
-    u.role = 'admin'
-    u.save()
-    print(f'Superuser created: {phone}')
-else:
-    print(f'Superuser already exists: {phone}')
+pwd = '${DJANGO_SUPERUSER_PASSWORD:-RoyalAdmin2024!}'
+u, _ = CustomUser.objects.get_or_create(phone_number=phone, defaults={'full_name': name})
+u.full_name = name
+u.role = 'admin'
+u.is_staff = True
+u.is_superuser = True
+u.is_active = True
+u.set_password(pwd)
+u.save()
+print(f'Superuser verified and updated: {phone}')
 "
 
 echo "Seeding demo data..."

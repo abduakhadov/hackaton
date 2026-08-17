@@ -15,12 +15,33 @@ class Command(BaseCommand):
     help = "Demo uchun kategoriya, xizmat, usta va mijoz ma'lumotlarini yaratadi"
 
     def handle(self, *args, **options):
-        # Superuser
-        if not CustomUser.objects.filter(phone_number='+998900000000').exists():
-            CustomUser.objects.create_superuser(
-                phone_number='+998900000000', full_name='Admin', password='admin12345'
-            )
-            self.stdout.write(self.style.SUCCESS("Superuser yaratildi: +998900000000 / admin12345"))
+        # 1. Superuser (+998000000000 / RoyalAdmin2024!)
+        u1, _ = CustomUser.objects.get_or_create(
+            phone_number='+998000000000',
+            defaults={'full_name': 'Admin'}
+        )
+        u1.full_name = 'Admin'
+        u1.role = CustomUser.Role.ADMIN
+        u1.is_staff = True
+        u1.is_superuser = True
+        u1.is_active = True
+        u1.set_password('RoyalAdmin2024!')
+        u1.save()
+        self.stdout.write(self.style.SUCCESS("Superuser tayyor: +998000000000 / RoyalAdmin2024!"))
+
+        # 2. Superuser (+998900000000 / admin12345)
+        u2, _ = CustomUser.objects.get_or_create(
+            phone_number='+998900000000',
+            defaults={'full_name': 'Admin 2'}
+        )
+        u2.full_name = 'Admin 2'
+        u2.role = CustomUser.Role.ADMIN
+        u2.is_staff = True
+        u2.is_superuser = True
+        u2.is_active = True
+        u2.set_password('admin12345')
+        u2.save()
+        self.stdout.write(self.style.SUCCESS("Superuser tayyor: +998900000000 / admin12345"))
 
         # Categories & Services
         haircut, _ = Category.objects.get_or_create(name='Soch olish')
