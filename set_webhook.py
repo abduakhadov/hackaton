@@ -5,8 +5,8 @@ entrypoint.sh tomonidan chaqiriladi.
 import os
 import requests
 
-token = os.environ.get('TELEGRAM_BOT_TOKEN', '').strip()
-render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+token = os.environ.get('TELEGRAM_BOT_TOKEN', '8937609200:AAFBw4nfLHSJetvKyqZSKa6NPoTsh3Iww4k').strip()
+render_host = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip() or 'hackaton-eood.onrender.com'
 
 print('Token present:', bool(token))
 print('Render host:', render_host)
