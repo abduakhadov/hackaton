@@ -3,7 +3,7 @@
 {% block content %}
 <section class="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
     <h1 class="font-display font-800 text-3xl mb-8 text-center">
-        <span class="gold-text">{% if object %}Bronni tahrirlash{% else %}Yangi bron{% endif %}</span>
+        <span class="gold-text" data-i18n="{% if object %}booking_edit_title{% else %}booking_create_title{% endif %}">{% if object %}Bronni tahrirlash{% else %}Yangi bron{% endif %}</span>
     </h1>
     <form method="post" class="space-y-5 bg-black/40 border border-yellow-600/20 rounded-xl p-8">
         {% csrf_token %}
@@ -17,12 +17,13 @@
             {% for error in field.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
         </div>
         {% endfor %}
-        <button type="submit" class="w-full gold-gradient text-black font-semibold py-3 rounded-lg hover:opacity-90 transition">
+        <button type="submit" class="w-full gold-gradient text-black font-semibold py-3 rounded-lg hover:opacity-90 transition" data-i18n="btn_confirm_booking">
             Bronni tasdiqlash
         </button>
     </form>
-    <p class="text-gray-600 text-xs text-center mt-4">
+    <p class="text-gray-600 text-xs text-center mt-4" data-i18n="booking_notice">
         Eslatma: tanlangan usta shu vaqt oralig'ida band bo'lsa, tizim avtomatik xabar beradi.
     </p>
 </section>
 {% endblock %}
+

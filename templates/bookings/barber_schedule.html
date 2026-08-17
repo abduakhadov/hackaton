@@ -2,16 +2,16 @@
 {% block title %}Ish jadvalim — Royal Barber{% endblock %}
 {% block content %}
 <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <h1 class="font-display font-800 text-3xl mb-8"><span class="gold-text">Ish jadvalim</span></h1>
+    <h1 class="font-display font-800 text-3xl mb-8"><span class="gold-text" data-i18n="schedule_title">Ish jadvalim</span></h1>
 
     <div class="space-y-4">
         {% for appt in appointments %}
         <div class="bg-black/40 border border-yellow-600/20 rounded-xl p-6 flex flex-wrap justify-between items-center gap-4">
             <div>
                 <h3 class="text-white font-semibold text-lg">{{ appt.service.name }}</h3>
-                <p class="text-gray-500 text-sm">Mijoz: {{ appt.client.full_name }} ({{ appt.client.phone_number }})</p>
+                <p class="text-gray-500 text-sm"><span data-i18n="label_client">Mijoz</span>: {{ appt.client.full_name }} ({{ appt.client.phone_number }})</p>
                 <p class="text-gray-500 text-sm">{{ appt.date }} · {{ appt.start_time }} - {{ appt.end_time }}</p>
-                {% if appt.notes %}<p class="text-gray-600 text-xs mt-1">Izoh: {{ appt.notes }}</p>{% endif %}
+                {% if appt.notes %}<p class="text-gray-600 text-xs mt-1"><span data-i18n="label_comment">Izoh</span>: {{ appt.notes }}</p>{% endif %}
             </div>
             <span class="text-xs px-3 py-1 rounded-full
                 {% if appt.status == 'confirmed' %} bg-green-900/30 text-green-400
@@ -22,8 +22,9 @@
             </span>
         </div>
         {% empty %}
-        <p class="text-gray-500 text-center py-10">Sizga hali bronlar tushmagan.</p>
+        <p class="text-gray-500 text-center py-10" data-i18n="empty_schedule">Sizga hali bronlar tushmagan.</p>
         {% endfor %}
     </div>
 </section>
 {% endblock %}
+

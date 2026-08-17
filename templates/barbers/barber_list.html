@@ -2,8 +2,8 @@
 {% block title %}Ustalar — Royal Barber{% endblock %}
 {% block content %}
 <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-    <h1 class="font-display font-800 text-4xl mb-2 text-center"><span class="gold-text">Ustalarimiz</span></h1>
-    <p class="text-gray-500 text-center mb-10">Professional va tajribali sartaroshlar jamoasi</p>
+    <h1 class="font-display font-800 text-4xl mb-2 text-center"><span class="gold-text" data-i18n="barbers_title">Ustalarimiz</span></h1>
+    <p class="text-gray-500 text-center mb-10" data-i18n="barbers_desc">Professional va tajribali sartaroshlar jamoasi</p>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {% for barber in barbers %}
@@ -17,12 +17,12 @@
                 </div>
             {% endif %}
             <h3 class="font-semibold text-lg text-white group-hover:text-gold-500 transition">{{ barber.user.full_name }}</h3>
-            <p class="text-gray-500 text-sm mb-1">{{ barber.experience_years }} yillik tajriba</p>
+            <p class="text-gray-500 text-sm mb-1">{{ barber.experience_years }} <span data-i18n="unit_exp_years">yillik tajriba</span></p>
             <p class="text-gold-500 text-sm">★ {{ barber.rating }}</p>
             <p class="text-gray-600 text-xs mt-2">{{ barber.work_start_time }} - {{ barber.work_end_time }}</p>
         </a>
         {% empty %}
-        <p class="text-gray-500 col-span-3 text-center">Hozircha ustalar qo'shilmagan.</p>
+        <p class="text-gray-500 col-span-3 text-center" data-i18n="empty_barbers">Hozircha ustalar qo'shilmagan.</p>
         {% endfor %}
     </div>
 </section>

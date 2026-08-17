@@ -12,4 +12,16 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: ".onrender.com"
+        value: ".onrender.com,hackaton-eood.onrender.com"
+      - key: CSRF_TRUSTED_ORIGINS
+        value: "https://hackaton-eood.onrender.com"
+      - key: TELEGRAM_BOT_TOKEN
+        value: "8937609200:AAFBw4nfLHSJetvKyqZSKa6NPoTsh3Iww4k"
+      - key: TELEGRAM_BOT_USERNAME
+        value: "RoyalBarberOTPBot"
+      - key: DJANGO_SUPERUSER_PHONE
+        value: "+998000000000"
+      - key: DJANGO_SUPERUSER_NAME
+        value: "Admin"
+      - key: DJANGO_SUPERUSER_PASSWORD
+        value: "RoyalAdmin2024!"

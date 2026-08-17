@@ -2,7 +2,7 @@
 {% block title %}Ro'yxatdan o'tish — Royal Barber{% endblock %}
 {% block content %}
 <section class="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-20">
-    <h1 class="font-display font-800 text-3xl mb-8 text-center"><span class="gold-text">Ro'yxatdan o'tish</span></h1>
+    <h1 class="font-display font-800 text-3xl mb-8 text-center"><span class="gold-text" data-i18n="register_title">Ro'yxatdan o'tish</span></h1>
     <form method="post" class="space-y-5 bg-black/40 border border-yellow-600/20 rounded-xl p-8">
         {% csrf_token %}
         {% for field in form %}
@@ -13,12 +13,13 @@
             {% for error in field.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
         </div>
         {% endfor %}
-        <button type="submit" class="w-full gold-gradient text-black font-semibold py-3 rounded-lg hover:opacity-90 transition">
+        <button type="submit" class="w-full gold-gradient text-black font-semibold py-3 rounded-lg hover:opacity-90 transition" data-i18n="btn_register">
             Ro'yxatdan o'tish
         </button>
     </form>
     <p class="text-center text-gray-500 text-sm mt-6">
-        Hisobingiz bormi? <a href="{% url 'users:login' %}" class="text-gold-500 hover:underline">Kiring</a>
+        <span data-i18n="register_have_account">Hisobingiz bormi?</span> <a href="{% url 'users:login' %}" class="text-gold-500 hover:underline" data-i18n="register_login_link">Kiring</a>
     </p>
 </section>
 {% endblock %}
+

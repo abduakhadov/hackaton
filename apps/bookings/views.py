@@ -16,6 +16,13 @@ class BookingCreateView(LoginRequiredMixin, CreateView):
     template_name = 'bookings/booking_form.html'
     success_url = reverse_lazy('bookings:my_bookings')
 
+    def dispatch(self, request, *args, **kwargs):
+        # Usta bron qila olmaydi
+        if request.user.is_authenticated and request.user.is_barber:
+            messages.error(request, "Ustalar bron qila olmaydi. Siz o'z jadvalingizni 'Ish jadvalim' bo'limida ko'rishingiz mumkin.")
+            return HttpResponseRedirect(reverse_lazy('bookings:my_bookings'))
+        return super().dispatch(request, *args, **kwargs)
+
     def get_initial(self):
         initial = super().get_initial()
         barber_id = self.request.GET.get('barber')
@@ -38,14 +45,30 @@ class BookingCreateView(LoginRequiredMixin, CreateView):
 
 
 class MyBookingsListView(LoginRequiredMixin, ListView):
-    """Mijozning barcha bronlari ro'yxati."""
+    """
+    Mijoz uchun: o'z bronlari ro'yxati.
+    Usta uchun: o'ziga tushgan bronlar jadvali.
+    """
     model = Appointment
-    template_name = 'bookings/my_bookings.html'
     context_object_name = 'appointments'
 
+    def get_template_names(self):
+        if self.request.user.is_barber:
+            return ['bookings/barber_schedule.html']
+        return ['bookings/my_bookings.html']
+
     def get_queryset(self):
+        user = self.request.user
+        if user.is_barber:
+            barber_profile = getattr(user, 'barber_profile', None)
+            if barber_profile:
+                return Appointment.objects.filter(
+                    barber=barber_profile
+                ).select_related('client', 'service').order_by('-date', '-start_time')
+            return Appointment.objects.none()
+        # Mijoz uchun
         return Appointment.objects.filter(
-            client=self.request.user
+            client=user
         ).select_related('barber__user', 'service').order_by('-date', '-start_time')
 
 
@@ -101,3 +124,4 @@ class BarberScheduleView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return Appointment.objects.filter(
             barber=self.request.user.barber_profile
         ).select_related('client', 'service').order_by('-date', '-start_time')
+

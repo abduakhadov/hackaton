@@ -9,18 +9,18 @@
     <h1 class="font-display font-800 text-4xl mb-4 text-white">{{ service.name }}</h1>
     <p class="text-gray-400 leading-relaxed mb-6">{{ service.description }}</p>
     <div class="flex gap-8 mb-8 text-lg">
-        <div><span class="text-gray-500 text-sm block">Narxi</span><span class="text-gold-500 font-semibold">{{ service.price }} so'm</span></div>
-        <div><span class="text-gray-500 text-sm block">Davomiyligi</span><span class="text-white">{{ service.duration_minutes }} daqiqa</span></div>
+        <div><span class="text-gray-500 text-sm block" data-i18n="label_price">Narxi</span><span class="text-gold-500 font-semibold">{{ service.price }} <span data-i18n="unit_sum">so'm</span></span></div>
+        <div><span class="text-gray-500 text-sm block" data-i18n="label_duration">Davomiyligi</span><span class="text-white">{{ service.duration_minutes }} <span data-i18n="unit_minute">daqiqa</span></span></div>
     </div>
     <a href="{% url 'bookings:booking_create' %}?service={{ service.pk }}"
-       class="inline-block gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition">
+       class="inline-block gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition" data-i18n="btn_book_service">
         Ushbu xizmatga bron qilish
     </a>
 
     {% if request.user.is_authenticated and request.user.is_staff or request.user.role == 'admin' %}
     <div class="mt-8 flex gap-4">
-        <a href="{% url 'services:service_edit' service.pk %}" class="text-sm text-gray-400 hover:text-gold-500">Tahrirlash</a>
-        <a href="{% url 'services:service_delete' service.pk %}" class="text-sm text-gray-400 hover:text-red-400">O'chirish</a>
+        <a href="{% url 'services:service_edit' service.pk %}" class="text-sm text-gray-400 hover:text-gold-500" data-i18n="btn_edit">Tahrirlash</a>
+        <a href="{% url 'services:service_delete' service.pk %}" class="text-sm text-gray-400 hover:text-red-400" data-i18n="btn_delete">O'chirish</a>
     </div>
     {% endif %}
 </section>
