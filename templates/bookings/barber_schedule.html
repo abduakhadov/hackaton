@@ -28,10 +28,25 @@
                 <p class="text-gray-400 text-sm mt-0.5">
                     📅 {{ appt.date }} · ⏰ {{ appt.start_time }} - {{ appt.end_time }}
                 </p>
+
+                <!-- Mijozning bron paytidagi izohi / kommentariyasi -->
                 {% if appt.notes %}
-                <p class="text-gray-500 text-xs mt-2 bg-black/30 px-3 py-1.5 rounded-lg border border-yellow-600/10">
-                    <span data-i18n="label_comment">Izoh</span>: {{ appt.notes }}
-                </p>
+                <div class="mt-2.5 bg-yellow-600/10 border border-yellow-600/30 px-3.5 py-2 rounded-lg">
+                    <p class="text-xs text-gold-500 font-semibold mb-0.5">💬 Mijoz izohi (kommentariya):</p>
+                    <p class="text-xs text-gray-200">{{ appt.notes }}</p>
+                </div>
+                {% endif %}
+
+                <!-- Mijoz xizmatdan keyin qoldirgan bahosi va sharhi -->
+                {% if appt.rating or appt.review %}
+                <div class="mt-2.5 bg-green-900/20 border border-green-600/30 px-3.5 py-2 rounded-lg">
+                    <p class="text-xs text-green-400 font-semibold mb-0.5">
+                        ⭐ Mijoz bahosi: <span class="text-gold-500 font-bold">★ {{ appt.rating }}</span>
+                    </p>
+                    {% if appt.review %}
+                    <p class="text-xs text-gray-200 italic">"{{ appt.review }}"</p>
+                    {% endif %}
+                </div>
                 {% endif %}
             </div>
 

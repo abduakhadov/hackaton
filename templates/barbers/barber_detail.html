@@ -34,8 +34,32 @@
     </div>
 
     <a href="{% url 'bookings:booking_create' %}?barber={{ barber.pk }}"
-       class="inline-block gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition" data-i18n="btn_book_barber">
+       class="inline-block gold-gradient text-black font-semibold px-8 py-4 rounded-lg hover:opacity-90 transition mb-12" data-i18n="btn_book_barber">
         Ushbu ustaga bron qilish
     </a>
+
+    <!-- Mijozlar sharhlari va baholari -->
+    <div class="mt-4 pt-8 border-t border-yellow-600/20 space-y-4">
+        <h2 class="font-display text-xl text-gold-500">Mijozlar fikrlari va baholari ({{ reviews.count }})</h2>
+        <div class="space-y-3">
+            {% for rev in reviews %}
+            <div class="bg-black/40 border border-yellow-600/20 rounded-xl p-5 space-y-1.5">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2">
+                        <strong class="text-white text-sm">{{ rev.client.full_name }}</strong>
+                        <span class="text-xs text-gray-500">({{ rev.service.name }})</span>
+                    </div>
+                    <span class="text-gold-500 text-sm font-bold">★ {{ rev.rating }}</span>
+                </div>
+                {% if rev.review %}
+                <p class="text-gray-300 text-sm italic">"{{ rev.review }}"</p>
+                {% endif %}
+                <span class="text-gray-600 text-xs block">{{ rev.date }}</span>
+            </div>
+            {% empty %}
+            <p class="text-gray-500 text-sm py-4">Bu ustaga hali sharhlar qoldirilmagan.</p>
+            {% endfor %}
+        </div>
+    </div>
 </section>
 {% endblock %}

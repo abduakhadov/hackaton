@@ -17,10 +17,19 @@ class BarberListView(ListView):
 
 
 class BarberDetailView(DetailView):
-    """Usta profili — ish vaqti va ko'rsatadigan xizmatlari bilan."""
+    """Usta profili — ish vaqti, ko'rsatadigan xizmatlari va mijozlar sharhlari bilan."""
     model = BarberProfile
     template_name = 'barbers/barber_detail.html'
     context_object_name = 'barber'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        # Mijozlar qoldirgan sharhlar va baholar
+        context['reviews'] = self.object.appointments.filter(
+            status='completed',
+            rating__isnull=False
+        ).select_related('client').order_by('-id')
+        return context
 
 
 class BarberProfileUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
