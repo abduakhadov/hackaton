@@ -55,13 +55,15 @@ class RegisterView(View):
                 code=code,
             )
 
-            # Session ga saqlash (OTP id)
-            request.session['pending_otp_id'] = otp.pk
-            request.session['pending_phone'] = phone
+            # Agar avvalgi chat_id ma'lum bo'lsa, zudlik bilan botdan ham yuboramiz
+            prev_otp = TelegramOTP.objects.filter(phone_number=phone, telegram_chat_id__isnull=False).last()
+            if prev_otp and prev_otp.telegram_chat_id:
+                otp.telegram_chat_id = prev_otp.telegram_chat_id
+                otp.save()
+                send_otp(otp.telegram_chat_id, otp.code)
 
             from django.conf import settings
             bot_username = settings.TELEGRAM_BOT_USERNAME
-            # Botga deep link (start param sifatida telefon raqamni kodlangan holda yuboramiz)
             import urllib.parse
             start_param = urllib.parse.quote(phone.replace('+', '').replace(' ', ''))
             bot_link = f"https://t.me/{bot_username}?start={start_param}"
@@ -70,6 +72,7 @@ class RegisterView(View):
                 'bot_link': bot_link,
                 'phone': phone,
                 'otp_id': otp.pk,
+                'otp_code': otp.code,
             })
         return render(request, self.template_name, {'form': form})
 

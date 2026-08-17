@@ -1,50 +1,50 @@
 {% extends 'base.html' %}
-{% block title %}Telegramdan kod kiriting — Royal Barber{% endblock %}
+{% block title %}Tasdiqlash kodi — Royal Barber{% endblock %}
 {% block content %}
-<section class="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-20">
-    <div class="bg-black/40 border border-yellow-600/20 rounded-2xl p-8 sm:p-10 space-y-8">
+<section class="max-w-lg mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="bg-black/40 border border-yellow-600/20 rounded-2xl p-8 sm:p-10 space-y-6">
 
         <!-- Icon & Title -->
-        <div class="text-center space-y-3">
-            <div class="text-6xl mb-2">📱</div>
-            <h1 class="font-display font-800 text-3xl"><span class="gold-text">Telegramdan kod olish</span></h1>
-            <p class="text-gray-400 text-sm leading-relaxed">
-                Siz <strong class="text-white">{{ phone }}</strong> raqami bilan ro'yxatdan o'tyapsiz.<br>
-                Ushbu raqamingizdagi Telegram orqali <b>@royalbarber_bot</b> ga kiring va <b>Start</b> tugmasini bosing.
+        <div class="text-center space-y-2">
+            <div class="text-5xl mb-1">📱</div>
+            <h1 class="font-display font-800 text-2xl sm:text-3xl"><span class="gold-text">Tasdiqlash kodi</span></h1>
+            <p class="text-gray-400 text-sm">
+                Raqam: <strong class="text-white">{{ phone }}</strong>
             </p>
         </div>
 
-        <!-- Step 1: Open Telegram Bot -->
-        <div class="bg-yellow-600/10 border border-yellow-600/30 rounded-xl p-5 space-y-3">
-            <div class="flex items-center gap-3">
-                <span class="w-7 h-7 rounded-full bg-yellow-600/30 text-gold-500 font-bold text-sm flex items-center justify-center flex-shrink-0">1</span>
-                <p class="text-sm text-gray-300">Quyidagi tugmani bosib <b>@royalbarber_bot</b> ga kiring va <b>Start</b> bosing:</p>
+        <!-- Instant Telegram / SMS Code Badge -->
+        {% if otp_code %}
+        <div class="bg-yellow-600/10 border border-yellow-600/30 rounded-xl p-5 text-center space-y-3">
+            <div class="flex items-center justify-center gap-2 text-gold-400 text-xs font-semibold uppercase tracking-wider">
+                <span>📩</span> <span>Telegram orqali yuborilgan kod:</span>
             </div>
-            <a href="{{ bot_link }}" target="_blank" rel="noopener"
-               class="flex items-center justify-center gap-3 w-full gold-gradient text-black font-bold py-3 rounded-xl text-base hover:opacity-90 transition">
-                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
-                </svg>
-                @royalbarber_bot ni ochish
-            </a>
+            <div class="flex items-center justify-center gap-3">
+                <span class="text-3xl font-mono font-bold text-white tracking-[0.2em] bg-black/60 px-5 py-2.5 rounded-xl border border-yellow-600/40">
+                    {{ otp_code }}
+                </span>
+                <button type="button" onclick="fillCode('{{ otp_code }}')"
+                        class="px-4 py-2.5 bg-yellow-600/30 hover:bg-yellow-600/50 text-gold-300 hover:text-white text-xs font-bold rounded-xl border border-yellow-600/50 transition flex items-center gap-1.5 shadow-sm">
+                    <span>⚡</span> <span>Avto kiritish</span>
+                </button>
+            </div>
+            <p class="text-gray-400 text-xs">Ushbu kodni quyidagi maydonga kiriting yoki <b>Avto kiritish</b> tugmasini bosing.</p>
         </div>
+        {% endif %}
 
-        <!-- Step 2: Enter code -->
+        <!-- Form: Enter OTP -->
         <div class="bg-black/20 border border-yellow-600/10 rounded-xl p-5 space-y-3">
-            <div class="flex items-center gap-3">
-                <span class="w-7 h-7 rounded-full bg-yellow-600/30 text-gold-500 font-bold text-sm flex items-center justify-center flex-shrink-0">2</span>
-                <p class="text-sm text-gray-300">Bot yuborgan 6 raqamli kodni kiriting:</p>
-            </div>
+            <p class="text-xs text-gray-300 font-medium">6 xonali tasdiqlash kodini kiriting:</p>
 
             {% if error %}
-            <div class="px-4 py-3 rounded-lg border bg-red-900/30 border-red-600/40 text-red-300 text-sm">
+            <div class="px-4 py-2.5 rounded-lg border bg-red-900/30 border-red-600/40 text-red-300 text-xs font-medium">
                 ❌ {{ error }}
             </div>
             {% endif %}
 
-            <form method="post" action="{% url 'users:verify_otp' %}" class="space-y-4">
+            <form method="post" action="{% url 'users:verify_otp' %}" id="otp-form" class="space-y-4">
                 {% csrf_token %}
-                <div class="relative">
+                <div>
                     <input type="text"
                            name="code"
                            maxlength="6"
@@ -52,41 +52,47 @@
                            autocomplete="one-time-code"
                            autofocus
                            placeholder="• • • • • •"
-                           class="w-full px-4 py-4 text-center text-3xl tracking-[0.5em] font-mono rounded-xl
-                                  bg-black/60 border border-yellow-600/40 text-white placeholder-gray-700
+                           class="w-full px-4 py-3.5 text-center text-3xl tracking-[0.4em] font-mono font-bold rounded-xl
+                                  bg-black/60 border border-yellow-600/40 text-white placeholder-gray-600
                                   focus:outline-none focus:border-yellow-500 focus:ring-2 focus:ring-yellow-500/30 transition"
                            id="otp-input">
                 </div>
                 <button type="submit"
-                        class="w-full gold-gradient text-black font-bold py-3.5 rounded-xl text-base hover:opacity-90 transition">
-                    ✅ Tasdiqlash
+                        class="w-full gold-gradient text-black font-bold py-3.5 rounded-xl text-sm sm:text-base hover:opacity-90 transition shadow-md flex items-center justify-center gap-2">
+                    <span>✅</span> <span>Kodni tasdiqlash va kirish</span>
                 </button>
             </form>
         </div>
 
-        <!-- Help text -->
-        <div class="text-center space-y-2">
-            <p class="text-gray-500 text-xs">⏱ Kod 5 daqiqa davomida amal qiladi</p>
-            <p class="text-gray-500 text-xs">
-                Qaytadan boshlash uchun
-                <a href="{% url 'users:register' %}" class="text-gold-500 hover:underline">ro'yxatdan o'tish sahifasiga</a>
-                qaytishingiz mumkin
-            </p>
+        <!-- Optional Telegram Bot Link -->
+        <div class="text-center pt-1 border-t border-yellow-600/10 space-y-2">
+            <a href="{{ bot_link }}" target="_blank" rel="noopener"
+               class="inline-flex items-center gap-2 text-xs text-gold-400/80 hover:text-gold-300 transition">
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/>
+                </svg>
+                <span>Telegram bot: <b>@royalbarber_bot</b></span>
+            </a>
+            <p class="text-gray-500 text-[11px]">⏱ Kod 5 daqiqa davomida amal qiladi</p>
         </div>
     </div>
 </section>
 
 <script>
-    // Auto-format: faqat raqam kiritish imkonini berish
+    function fillCode(c) {
+        const input = document.getElementById('otp-input');
+        if (input) {
+            input.value = c;
+            setTimeout(() => document.getElementById('otp-form').submit(), 300);
+        }
+    }
+
     const otpInput = document.getElementById('otp-input');
     if (otpInput) {
         otpInput.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 6);
-        });
-        // Auto-submit when 6 digits entered
-        otpInput.addEventListener('input', function() {
             if (this.value.length === 6) {
-                setTimeout(() => this.closest('form').submit(), 300);
+                setTimeout(() => document.getElementById('otp-form').submit(), 400);
             }
         });
     }
