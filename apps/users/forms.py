@@ -35,6 +35,21 @@ class CustomUserCreationForm(UserCreationForm):
             {'class': TAILWIND_INPUT, 'placeholder': 'Parolni tasdiqlang'}
         )
 
+    def clean_phone_number(self):
+        raw_phone = self.cleaned_data.get('phone_number', '').strip()
+        # Tozalash
+        digits = ''.join(c for c in raw_phone if c.isdigit())
+        if len(digits) < 9 or len(digits) > 15:
+            raise forms.ValidationError("To'g'ri telefon raqami kiriting (masalan: +998901234567).")
+        
+        # Agar + bilan boshlanmagan bo'lsa, + qo'shamiz
+        formatted_phone = '+' + digits if not raw_phone.startswith('+') else '+' + digits
+
+        if CustomUser.objects.filter(phone_number=formatted_phone).exists():
+            raise forms.ValidationError("Ushbu telefon raqami allaqachon ro'yxatdan o'tgan.")
+
+        return formatted_phone
+
 
 class CustomAuthenticationForm(AuthenticationForm):
     username = forms.CharField(

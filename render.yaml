@@ -18,7 +18,7 @@ services:
       - key: TELEGRAM_BOT_TOKEN
         value: "8937609200:AAFBw4nfLHSJetvKyqZSKa6NPoTsh3Iww4k"
       - key: TELEGRAM_BOT_USERNAME
-        value: "RoyalBarberOTPBot"
+        value: "royalbarber_bot"
       - key: DJANGO_SUPERUSER_PHONE
         value: "+998000000000"
       - key: DJANGO_SUPERUSER_NAME

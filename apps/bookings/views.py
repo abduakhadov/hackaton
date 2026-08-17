@@ -1,12 +1,16 @@
-from django.http import HttpResponseRedirect
+import datetime
+from django.http import HttpResponseRedirect, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.exceptions import ValidationError
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView
+from django.shortcuts import get_object_or_404, redirect
 
 from .forms import BookingForm
 from .models import Appointment
+from apps.barbers.models import BarberProfile
 
 
 class BookingCreateView(LoginRequiredMixin, CreateView):
@@ -128,9 +132,6 @@ class BarberScheduleView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         return Appointment.objects.all().select_related('barber__user', 'client', 'service').order_by('-date', '-start_time')
 
 
-from django.views import View
-from django.shortcuts import get_object_or_404, redirect
-
 
 class UpdateBookingStatusView(LoginRequiredMixin, View):
     """Usta o'ziga tushgan bron holatini o'zgartiradi (kutilmoqda -> tasdiqlandi, bajarildi, bekor qilindi)."""
@@ -158,4 +159,94 @@ class UpdateBookingStatusView(LoginRequiredMixin, View):
             messages.error(request, "Noto'g'ri holat tanlandi.")
 
         return redirect('bookings:my_bookings')
+
+
+class BarberSlotsApiView(LoginRequiredMixin, View):
+    """
+    Usta va sana tanlanganda ustaning ish vaqti, band va bo'sh vaqt oralig'ini JSON qaytaradi.
+    GET /bookings/api/barber-slots/?barber=1&date=2026-08-18&duration=30
+    """
+
+    def get(self, request):
+        barber_id = request.GET.get('barber')
+        date_str = request.GET.get('date')
+        duration_str = request.GET.get('duration', '30')
+
+        if not barber_id or not date_str:
+            return JsonResponse({'error': 'Barber and date are required'}, status=400)
+
+        try:
+            barber = BarberProfile.objects.get(pk=barber_id)
+            appt_date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+            duration = int(duration_str) if duration_str.isdigit() else 30
+        except (BarberProfile.DoesNotExist, ValueError):
+            return JsonResponse({'error': 'Invalid barber or date format'}, status=400)
+
+        # Ustaning shu kundagi band bo'lgan bronlari
+        booked_appts = Appointment.objects.filter(
+            barber=barber,
+            date=appt_date,
+            status__in=[Appointment.Status.PENDING, Appointment.Status.CONFIRMED]
+        ).order_by('start_time')
+
+        booked_slots = [
+            {'start': a.start_time.strftime('%H:%M'), 'end': a.end_time.strftime('%H:%M')}
+            for a in booked_appts
+        ]
+
+        # Bo'sh vaqt oraliqlarini hisoblash
+        free_slots = []
+        curr_time = datetime.datetime.combine(appt_date, barber.work_start_time)
+        end_work = datetime.datetime.combine(appt_date, barber.work_end_time)
+
+        while curr_time + datetime.timedelta(minutes=duration) <= end_work:
+            slot_start = curr_time.time()
+            slot_end = (curr_time + datetime.timedelta(minutes=duration)).time()
+
+            is_busy = False
+            for a in booked_appts:
+                if slot_start < a.end_time and a.start_time < slot_end:
+                    is_busy = True
+                    break
+
+            if not is_busy:
+                free_slots.append(slot_start.strftime('%H:%M'))
+
+            curr_time += datetime.timedelta(minutes=30)
+
+        return JsonResponse({
+            'barber_name': barber.user.full_name,
+            'work_start': barber.work_start_time.strftime('%H:%M'),
+            'work_end': barber.work_end_time.strftime('%H:%M'),
+            'booked_slots': booked_slots,
+            'free_slots': free_slots,
+        })
+
+
+class RateAppointmentView(LoginRequiredMixin, View):
+    """Mijoz bajarilgan bron uchun baho (1-5 yulduz) va fikr qoldiradi."""
+
+    def post(self, request, pk):
+        appt = get_object_or_404(Appointment, pk=pk, client=request.user)
+        if appt.status != Appointment.Status.COMPLETED:
+            messages.error(request, "Faqat bajarilgan xizmatlar uchun baho berish mumkin.")
+            return redirect('bookings:my_bookings')
+
+        rating_val = request.POST.get('rating')
+        review_text = request.POST.get('review', '').strip()
+
+        try:
+            rating_int = int(rating_val)
+            if 1 <= rating_int <= 5:
+                appt.rating = rating_int
+                appt.review = review_text
+                appt.save()
+                messages.success(request, f"Rahmat! Ustaga {rating_int} ★ baho berildi.")
+            else:
+                messages.error(request, "Baho 1 dan 5 gacha bo'lishi kerak.")
+        except (TypeError, ValueError):
+            messages.error(request, "Noto'g'ri baho qiymati.")
+
+        return redirect('bookings:my_bookings')
+
 

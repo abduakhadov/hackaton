@@ -35,6 +35,12 @@ class Appointment(models.Model):
         max_length=10, choices=Status.choices, default=Status.PENDING, verbose_name="Holati"
     )
     notes = models.TextField(blank=True, verbose_name="Izoh")
+    rating = models.PositiveSmallIntegerField(
+        null=True, blank=True,
+        choices=[(1, '1 ★'), (2, '2 ★★'), (3, '3 ★★★'), (4, '4 ★★★★'), (5, '5 ★★★★★')],
+        verbose_name="Mijoz bahosi (1-5)"
+    )
+    review = models.TextField(blank=True, verbose_name="Mijoz sharhi")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -89,8 +95,24 @@ class Appointment(models.Model):
                     f"{appt.end_time.strftime('%H:%M')} oralig'ida band. Boshqa vaqt tanlang."
                 )
 
+    def update_barber_rating(self):
+        """Mijoz baho berganida ustaning o'rtacha reytingini qayta hisoblash."""
+        if not self.barber_id:
+            return
+        ratings = Appointment.objects.filter(
+            barber=self.barber,
+            status=self.Status.COMPLETED,
+            rating__isnull=False
+        ).values_list('rating', flat=True)
+        if ratings:
+            avg_rating = round(sum(ratings) / len(ratings), 1)
+            self.barber.rating = avg_rating
+            self.barber.save(update_fields=['rating'])
+
     def save(self, *args, **kwargs):
         if not self.end_time:
             self.end_time = self._calculate_end_time()
         self.full_clean()
         super().save(*args, **kwargs)
+        if self.rating:
+            self.update_barber_rating()

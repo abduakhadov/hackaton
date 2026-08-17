@@ -140,8 +140,8 @@ LOGIN_REDIRECT_URL = 'main:home'
 LOGOUT_REDIRECT_URL = 'main:home'
 
 # ── Telegram Bot ──────────────────────────────────────────────
-TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
-TELEGRAM_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'RoyalBarberOTPBot')
+TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '8937609200:AAFBw4nfLHSJetvKyqZSKa6NPoTsh3Iww4k')
+TELEGRAM_BOT_USERNAME = os.environ.get('TELEGRAM_BOT_USERNAME', 'royalbarber_bot')
 
 # ── Security Settings ─────────────────────────────────────────
 if not DEBUG:

@@ -5,18 +5,64 @@
     <h1 class="font-display font-800 text-3xl mb-8 text-center">
         <span class="gold-text" data-i18n="{% if object %}booking_edit_title{% else %}booking_create_title{% endif %}">{% if object %}Bronni tahrirlash{% else %}Yangi bron{% endif %}</span>
     </h1>
-    <form method="post" class="space-y-5 bg-black/40 border border-yellow-600/20 rounded-xl p-8">
+
+    <form method="post" id="bookingForm" class="space-y-5 bg-black/40 border border-yellow-600/20 rounded-xl p-8">
         {% csrf_token %}
         {% for error in form.non_field_errors %}
             <p class="text-red-400 text-sm bg-red-900/20 border border-red-600/30 rounded-lg px-4 py-3">{{ error }}</p>
         {% endfor %}
-        {% for field in form %}
+
         <div>
-            <label class="block text-sm text-gray-400 mb-1">{{ field.label }}</label>
-            {{ field }}
-            {% for error in field.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+            <label class="block text-sm text-gray-400 mb-1">{{ form.barber.label }}</label>
+            {{ form.barber }}
+            {% for error in form.barber.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
         </div>
-        {% endfor %}
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ form.service.label }}</label>
+            {{ form.service }}
+            {% for error in form.service.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ form.date.label }}</label>
+            {{ form.date }}
+            {% for error in form.date.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+
+        <!-- Dynamic Barber Schedule & Free Slots Card -->
+        <div id="scheduleBox" class="hidden p-4 rounded-xl border border-yellow-600/30 bg-yellow-600/10 space-y-3">
+            <div class="flex items-center justify-between text-xs text-gray-300">
+                <span>🕒 <strong id="barberNameText">Usta</strong> ish vaqti: <b id="barberHoursText" class="text-gold-500"></b></span>
+            </div>
+
+            <!-- Booked slots -->
+            <div id="bookedSlotsContainer" class="hidden text-xs">
+                <span class="text-red-400 font-semibold">🔴 Band vaqtlar:</span>
+                <span id="bookedSlotsText" class="text-gray-400 ml-1"></span>
+            </div>
+
+            <!-- Free slots picker -->
+            <div id="freeSlotsContainer" class="space-y-1.5">
+                <span class="text-xs text-green-400 font-semibold block">🟢 Bo'sh vaqtni tanlang:</span>
+                <div id="slotsButtons" class="flex flex-wrap gap-2 pt-1">
+                    <!-- Dynamic slot pills -->
+                </div>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ form.start_time.label }}</label>
+            {{ form.start_time }}
+            {% for error in form.start_time.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+
+        <div>
+            <label class="block text-sm text-gray-400 mb-1">{{ form.notes.label }}</label>
+            {{ form.notes }}
+            {% for error in form.notes.errors %}<p class="text-red-400 text-xs mt-1">{{ error }}</p>{% endfor %}
+        </div>
+
         <button type="submit" class="w-full gold-gradient text-black font-semibold py-3 rounded-lg hover:opacity-90 transition" data-i18n="btn_confirm_booking">
             Bronni tasdiqlash
         </button>
@@ -25,5 +71,86 @@
         Eslatma: tanlangan usta shu vaqt oralig'ida band bo'lsa, tizim avtomatik xabar beradi.
     </p>
 </section>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const barberSelect = document.querySelector('select[name="barber"]');
+    const dateInput = document.querySelector('input[name="date"]');
+    const timeInput = document.querySelector('input[name="start_time"]');
+    const scheduleBox = document.getElementById('scheduleBox');
+    const barberNameText = document.getElementById('barberNameText');
+    const barberHoursText = document.getElementById('barberHoursText');
+    const bookedSlotsContainer = document.getElementById('bookedSlotsContainer');
+    const bookedSlotsText = document.getElementById('bookedSlotsText');
+    const slotsButtons = document.getElementById('slotsButtons');
+
+    // Set min date to today
+    if (dateInput && !dateInput.value) {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.min = today;
+        dateInput.value = today;
+    }
+
+    async function fetchSlots() {
+        const barberId = barberSelect ? barberSelect.value : null;
+        const dateVal = dateInput ? dateInput.value : null;
+
+        if (!barberId || !dateVal) {
+            scheduleBox.classList.add('hidden');
+            return;
+        }
+
+        try {
+            const res = await fetch(`/bookings/api/slots/?barber=${barberId}&date=${dateVal}`);
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+
+            barberNameText.textContent = data.barber_name;
+            barberHoursText.textContent = `${data.work_start} - ${data.work_end}`;
+
+            // Booked slots
+            if (data.booked_slots && data.booked_slots.length > 0) {
+                bookedSlotsText.textContent = data.booked_slots.map(s => `${s.start} - ${s.end}`).join(', ');
+                bookedSlotsContainer.classList.remove('hidden');
+            } else {
+                bookedSlotsContainer.classList.add('hidden');
+            }
+
+            // Free slots buttons
+            slotsButtons.innerHTML = '';
+            if (data.free_slots && data.free_slots.length > 0) {
+                data.free_slots.forEach(slot => {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = 'px-3 py-1.5 rounded-lg text-xs font-semibold border border-yellow-600/40 bg-black/60 text-gold-500 hover:bg-yellow-600/20 transition';
+                    btn.textContent = slot;
+                    btn.onclick = () => {
+                        timeInput.value = slot;
+                        // highlight selected button
+                        document.querySelectorAll('#slotsButtons button').forEach(b => b.classList.remove('bg-yellow-600', 'text-black'));
+                        btn.classList.add('bg-yellow-600', 'text-black');
+                    };
+                    slotsButtons.appendChild(btn);
+                });
+            } else {
+                slotsButtons.innerHTML = '<span class="text-xs text-red-400">Bu kunga bo\'sh vaqt qolmagan</span>';
+            }
+
+            scheduleBox.classList.remove('hidden');
+        } catch (e) {
+            scheduleBox.classList.add('hidden');
+        }
+    }
+
+    if (barberSelect) barberSelect.addEventListener('change', fetchSlots);
+    if (dateInput) dateInput.addEventListener('change', fetchSlots);
+
+    // Initial load if already selected
+    if (barberSelect && barberSelect.value && dateInput && dateInput.value) {
+        fetchSlots();
+    }
+});
+</script>
 {% endblock %}
+
 
