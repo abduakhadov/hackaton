@@ -80,42 +80,67 @@ class VerifyOTPView(View):
     """OTP kodni tasdiqlash va hisob yaratish."""
     template_name = 'users/verify_otp.html'
 
-    def post(self, request):
-        code = request.POST.get('code', '').strip()
+    def get(self, request):
         otp_id = request.session.get('pending_otp_id')
         phone = request.session.get('pending_phone')
+        from django.conf import settings
+        bot_username = settings.TELEGRAM_BOT_USERNAME
+        import urllib.parse
+        start_param = urllib.parse.quote((phone or '').replace('+', '').replace(' ', ''))
+        bot_link = f"https://t.me/{bot_username}?start={start_param}"
+        return render(request, self.template_name, {
+            'bot_link': bot_link,
+            'phone': phone or '',
+            'otp_id': otp_id or '',
+        })
 
-        if not otp_id or not phone:
-            messages.error(request, "Sessiya muddati tugagan. Qaytadan ro'yxatdan o'ting.")
-            return redirect('users:register')
+    def post(self, request):
+        code = request.POST.get('code', '').strip()
+        otp_id = request.POST.get('otp_id') or request.session.get('pending_otp_id')
+        phone = request.POST.get('phone') or request.session.get('pending_phone')
 
-        try:
-            otp = TelegramOTP.objects.get(pk=otp_id, phone_number=phone)
-        except TelegramOTP.DoesNotExist:
-            messages.error(request, "OTP topilmadi. Qaytadan urinib ko'ring.")
+        if not code:
+            messages.error(request, "Iltimos, tasdiqlash kodini kiriting.")
+            return redirect('users:verify_otp')
+
+        otp = None
+        # 1. ID va telefon orqali qidirish
+        if otp_id and phone:
+            otp = TelegramOTP.objects.filter(pk=otp_id, phone_number=phone, is_used=False).first()
+        
+        # 2. Agar topilmasa, kiritilgan kod bo'yicha qidirish
+        if not otp:
+            otp = TelegramOTP.objects.filter(code=code, is_used=False).order_by('-created_at').first()
+
+        # 3. Agar topilmasa, oxirgi 15 daqiqadagi ishlatilmagan OTP
+        if not otp and phone:
+            otp = TelegramOTP.objects.filter(phone_number=phone, is_used=False).order_by('-created_at').first()
+
+        if not otp:
+            messages.error(request, "Noto'g'ri yoki ishlatilgan kod. Qaytadan urinib ko'ring.")
             return redirect('users:register')
 
         if not otp.is_valid():
-            messages.error(request, "Kod muddati tugagan (5 daqiqa). Qaytadan ro'yxatdan o'ting.")
-            TelegramOTP.objects.filter(pk=otp_id).delete()
+            messages.error(request, "Kod muddati tugagan (15 daqiqa). Qaytadan ro'yxatdan o'ting.")
+            TelegramOTP.objects.filter(pk=otp.pk).delete()
             return redirect('users:register')
 
         if otp.code != code:
-            messages.error(request, "Noto'g'ri kod. Qayta urinib ko'ring.")
+            messages.error(request, "Noto'g'ri tasdiqlash kodi kiritildi. Qayta urinib ko'ring.")
             from django.conf import settings
             bot_username = settings.TELEGRAM_BOT_USERNAME
             import urllib.parse
-            start_param = urllib.parse.quote(phone.replace('+', '').replace(' ', ''))
+            start_param = urllib.parse.quote(otp.phone_number.replace('+', '').replace(' ', ''))
             bot_link = f"https://t.me/{bot_username}?start={start_param}"
             return render(request, self.template_name, {
                 'bot_link': bot_link,
-                'phone': phone,
-                'otp_id': otp_id,
-                'error': "Noto'g'ri kod. Qayta urinib ko'ring.",
+                'phone': otp.phone_number,
+                'otp_id': otp.pk,
+                'error': "Noto'g'ri kod. Iltimos, Telegram bot yuborgan kodni to'g'ri kiriting.",
             })
 
         # OTP to'g'ri — foydalanuvchi yaratish
-        if CustomUser.objects.filter(phone_number=phone).exists():
+        if CustomUser.objects.filter(phone_number=otp.phone_number).exists():
             messages.error(request, "Bu telefon raqami allaqachon ro'yxatdan o'tgan.")
             return redirect('users:login')
 

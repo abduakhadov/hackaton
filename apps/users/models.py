@@ -70,8 +70,8 @@ class TelegramOTP(models.Model):
         verbose_name_plural = "Telegram OTP lar"
 
     def is_valid(self):
-        """Kod 5 daqiqa davomida amal qiladi."""
-        expiry = self.created_at + datetime.timedelta(minutes=5)
+        """Kod 15 daqiqa davomida amal qiladi."""
+        expiry = self.created_at + datetime.timedelta(minutes=15)
         return not self.is_used and timezone.now() <= expiry
 
     def __str__(self):

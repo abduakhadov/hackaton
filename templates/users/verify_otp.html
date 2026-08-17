@@ -44,6 +44,8 @@
 
             <form method="post" action="{% url 'users:verify_otp' %}" id="otp-form" class="space-y-4">
                 {% csrf_token %}
+                <input type="hidden" name="otp_id" value="{{ otp_id }}">
+                <input type="hidden" name="phone" value="{{ phone }}">
                 <div>
                     <input type="text"
                            name="code"
@@ -66,7 +68,7 @@
 
         <!-- Help text -->
         <div class="text-center space-y-2">
-            <p class="text-gray-500 text-xs">⏱ Kod 5 daqiqa davomida amal qiladi</p>
+            <p class="text-gray-500 text-xs">⏱ Kod 15 daqiqa davomida amal qiladi</p>
             <p class="text-gray-500 text-xs">
                 Qaytadan boshlash uchun
                 <a href="{% url 'users:register' %}" class="text-gold-500 hover:underline">ro'yxatdan o'tish sahifasiga</a>
