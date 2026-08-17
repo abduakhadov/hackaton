@@ -82,73 +82,98 @@
 <body class="font-body min-h-screen flex flex-col">
 
     <!-- Header -->
-    <header class="border-b border-yellow-600/20 sticky top-0 z-50 backdrop-blur">
+    <header class="border-b border-yellow-600/20 sticky top-0 z-50 backdrop-blur bg-black/80">
         <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-20">
-                <a href="{% url 'main:home' %}" class="flex items-center gap-2">
-                    <span class="font-display font-800 text-2xl gold-text tracking-wide">ROYAL BARBER</span>
+            <div class="flex justify-between items-center h-20 gap-4">
+                <!-- Logo -->
+                <a href="{% url 'main:home' %}" class="flex items-center gap-2 flex-shrink-0">
+                    <span class="font-display font-800 text-xl sm:text-2xl gold-text tracking-wide whitespace-nowrap">ROYAL BARBER</span>
                 </a>
 
-                <div class="hidden md:flex items-center gap-8 text-sm font-medium">
-                    <a href="{% url 'main:home' %}" class="hover:text-gold-500 transition" data-i18n="nav_home">Bosh sahifa</a>
-                    <a href="{% url 'services:service_list' %}" class="hover:text-gold-500 transition" data-i18n="nav_services">Xizmatlar</a>
-                    <a href="{% url 'barbers:barber_list' %}" class="hover:text-gold-500 transition" data-i18n="nav_barbers">Ustalar</a>
-                    <a href="{% url 'main:about' %}" class="hover:text-gold-500 transition" data-i18n="nav_about">Biz haqimizda</a>
-                    <a href="{% url 'main:contact' %}" class="hover:text-gold-500 transition" data-i18n="nav_contact">Bog'lanish</a>
+                <!-- Desktop / Tablet Main Navigation -->
+                <div class="hidden md:flex items-center gap-5 lg:gap-7 text-sm font-medium">
+                    <a href="{% url 'main:home' %}" class="hover:text-gold-500 transition whitespace-nowrap" data-i18n="nav_home">Bosh sahifa</a>
+                    <a href="{% url 'services:service_list' %}" class="hover:text-gold-500 transition whitespace-nowrap" data-i18n="nav_services">Xizmatlar</a>
+                    <a href="{% url 'barbers:barber_list' %}" class="hover:text-gold-500 transition whitespace-nowrap" data-i18n="nav_barbers">Ustalar</a>
+                    <a href="{% url 'main:about' %}" class="hover:text-gold-500 transition whitespace-nowrap" data-i18n="nav_about">Biz haqimizda</a>
+                    <a href="{% url 'main:contact' %}" class="hover:text-gold-500 transition whitespace-nowrap" data-i18n="nav_contact">Bog'lanish</a>
+                    {% if user.is_authenticated %}
+                        {% if user.is_barber %}
+                            <a href="{% url 'bookings:my_bookings' %}" class="text-gold-400 hover:text-gold-300 font-semibold transition whitespace-nowrap flex items-center gap-1.5" data-i18n="nav_schedule">
+                                <span>📅</span> Ish jadvalim
+                            </a>
+                        {% else %}
+                            <a href="{% url 'bookings:my_bookings' %}" class="text-gold-400 hover:text-gold-300 font-semibold transition whitespace-nowrap flex items-center gap-1.5" data-i18n="nav_my_bookings">
+                                <span>📋</span> Mening bronlarim
+                            </a>
+                        {% endif %}
+                    {% endif %}
                 </div>
 
-                <div class="flex items-center gap-3">
+                <!-- Right Actions (Theme, Lang, CTA, Auth) -->
+                <div class="flex items-center gap-2 sm:gap-3 flex-shrink-0">
 
-                    <!-- Theme Switcher Button (Tungi / Kungi) -->
+                    <!-- Theme Switcher Button -->
                     <button id="themeToggleBtn" onclick="toggleTheme()" 
-                            class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-yellow-600/40 hover:border-yellow-500 transition">
+                            class="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg border border-yellow-600/40 hover:border-yellow-500 transition flex-shrink-0">
                         <span id="themeIcon">🌙</span>
-                        <span id="themeText" data-i18n="theme_dark">Tungi</span>
+                        <span id="themeText" class="hidden sm:inline" data-i18n="theme_dark">Tungi</span>
                     </button>
 
                     <!-- Language Switcher Buttons (UZB | РУС | ENG) -->
-                    <div class="inline-flex rounded-lg border border-yellow-600/40 p-0.5 text-xs font-semibold">
-                        <button onclick="setLanguage('uz')" id="btnLangUz" class="px-2 py-1 rounded-md transition text-gold-500 bg-yellow-600/20">UZB</button>
+                    <div class="inline-flex rounded-lg border border-yellow-600/40 p-0.5 text-xs font-semibold flex-shrink-0">
+                        <button onclick="setLanguage('uz')" id="btnLangUz" class="px-2 py-1 rounded-md transition text-gold-500 bg-yellow-600/20 font-bold">UZB</button>
                         <button onclick="setLanguage('ru')" id="btnLangRu" class="px-2 py-1 rounded-md transition text-gray-400 hover:text-gold-500">РУС</button>
                         <button onclick="setLanguage('en')" id="btnLangEn" class="px-2 py-1 rounded-md transition text-gray-400 hover:text-gold-500">ENG</button>
                     </div>
 
                     {% if user.is_authenticated %}
-                        {% if user.is_barber %}
-                            <!-- Usta uchun: Ish jadvalim ko'rinadi -->
-                            <a href="{% url 'bookings:my_bookings' %}"
-                               class="hidden sm:inline-block gold-gradient text-black font-semibold px-4 py-2 rounded-lg text-sm hover:opacity-90 transition"
-                               data-i18n="nav_schedule">
-                                Ish jadvalim
-                            </a>
-                        {% else %}
-                            <!-- Mijoz uchun: Bron qilish ko'rinadi -->
+                        {% if not user.is_barber %}
+                            <!-- Mijoz uchun: Bron qilish tugmasi -->
                             <a href="{% url 'bookings:booking_create' %}"
-                               class="hidden sm:inline-block gold-gradient text-black font-semibold px-4 py-2 rounded-lg text-sm hover:opacity-90 transition"
+                               class="gold-gradient text-black font-bold px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm hover:opacity-90 transition whitespace-nowrap shadow-sm flex items-center gap-1"
                                data-i18n="btn_book">
-                                Bron qilish
+                                <span>✂️</span> Bron qilish
                             </a>
-                            <a href="{% url 'bookings:my_bookings' %}" class="text-sm hover:text-gold-500 transition" data-i18n="nav_my_bookings">Mening bronlarim</a>
                         {% endif %}
-                        <a href="{% url 'users:profile' %}" class="flex items-center gap-2">
+
+                        <!-- Profil avatar -->
+                        <a href="{% url 'users:profile' %}" class="flex items-center gap-1.5 flex-shrink-0 group" title="{{ user.full_name }}">
                             {% if user.avatar %}
-                                <img src="{{ user.avatar.url }}" class="w-9 h-9 rounded-full object-cover border border-yellow-600/40">
+                                <img src="{{ user.avatar.url }}" class="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover border border-yellow-600/40 group-hover:border-yellow-500 transition">
                             {% else %}
-                                <span class="w-9 h-9 rounded-full bg-yellow-600/20 flex items-center justify-center text-gold-500 font-semibold">
+                                <span class="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-yellow-600/20 flex items-center justify-center text-gold-500 font-bold text-xs sm:text-sm border border-yellow-600/40 group-hover:border-yellow-500 transition">
                                     {{ user.full_name|slice:":1"|upper }}
                                 </span>
                             {% endif %}
                         </a>
-                        <a href="{% url 'users:logout' %}" class="text-sm text-gray-400 hover:text-red-400 transition" data-i18n="nav_logout">Chiqish</a>
+
+                        <!-- Chiqish -->
+                        <a href="{% url 'users:logout' %}" class="text-xs sm:text-sm text-gray-400 hover:text-red-400 transition whitespace-nowrap hidden sm:inline" data-i18n="nav_logout">Chiqish</a>
                     {% else %}
-                        <a href="{% url 'users:login' %}" class="text-sm hover:text-gold-500 transition" data-i18n="nav_login">Kirish</a>
+                        <a href="{% url 'users:login' %}" class="text-xs sm:text-sm text-gray-300 hover:text-gold-500 transition whitespace-nowrap" data-i18n="nav_login">Kirish</a>
                         <a href="{% url 'users:register' %}"
-                           class="gold-gradient text-black font-semibold px-4 py-2 rounded-lg text-sm hover:opacity-90 transition"
+                           class="gold-gradient text-black font-bold px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm hover:opacity-90 transition whitespace-nowrap"
                            data-i18n="nav_register">
                             Ro'yxatdan o'tish
                         </a>
                     {% endif %}
                 </div>
+            </div>
+
+            <!-- Mobile Sub-Navigation Bar (for quick access on phones) -->
+            <div class="flex md:hidden items-center justify-around py-2.5 border-t border-yellow-600/10 text-xs text-gray-400 overflow-x-auto">
+                <a href="{% url 'main:home' %}" class="hover:text-gold-500 transition px-2 py-1 whitespace-nowrap" data-i18n="nav_home">Bosh sahifa</a>
+                <a href="{% url 'services:service_list' %}" class="hover:text-gold-500 transition px-2 py-1 whitespace-nowrap" data-i18n="nav_services">Xizmatlar</a>
+                <a href="{% url 'barbers:barber_list' %}" class="hover:text-gold-500 transition px-2 py-1 whitespace-nowrap" data-i18n="nav_barbers">Ustalar</a>
+                {% if user.is_authenticated %}
+                    {% if user.is_barber %}
+                        <a href="{% url 'bookings:my_bookings' %}" class="text-gold-500 font-semibold px-2 py-1 whitespace-nowrap" data-i18n="nav_schedule">Ish jadvalim</a>
+                    {% else %}
+                        <a href="{% url 'bookings:my_bookings' %}" class="text-gold-500 font-semibold px-2 py-1 whitespace-nowrap" data-i18n="nav_my_bookings">Bronlarim</a>
+                    {% endif %}
+                    <a href="{% url 'users:logout' %}" class="text-red-400 px-2 py-1 whitespace-nowrap" data-i18n="nav_logout">Chiqish</a>
+                {% endif %}
             </div>
         </nav>
     </header>
