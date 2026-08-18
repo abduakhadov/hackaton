@@ -14,4 +14,5 @@ urlpatterns = [
     path('profile/<int:pk>/', views.ProfileView.as_view(), name='profile_detail'),
     # Telegram bot webhook — bot dan xabarlar keladi
     path('tg-webhook/', views.TelegramWebhookView.as_view(), name='telegram_webhook'),
+    path('check-otp-status/', views.check_otp_status, name='check_otp_status'),
 ]

@@ -180,6 +180,21 @@ class VerifyOTPView(View):
         return redirect('main:home')
 
 
+def check_otp_status(request):
+    """AJAX orqali Telegram botdan kod yuborilganligini tekshirish."""
+    otp_id = request.GET.get('otp_id') or request.session.get('pending_otp_id')
+    phone = request.GET.get('phone') or request.session.get('pending_phone')
+    otp = None
+    if otp_id:
+        otp = TelegramOTP.objects.filter(pk=otp_id, is_used=False).first()
+    elif phone:
+        otp = TelegramOTP.objects.filter(phone_number=phone, is_used=False).order_by('-created_at').first()
+
+    if otp and otp.telegram_chat_id:
+        return JsonResponse({'sent': True, 'chat_id': otp.telegram_chat_id})
+    return JsonResponse({'sent': False})
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class TelegramWebhookView(View):
     """
