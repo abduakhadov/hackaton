@@ -12,12 +12,14 @@ class UsersConfig(AppConfig):
     def ready(self):
         import apps.users.signals  # noqa
 
-        # Local development (runserver) rejimida Telegram botdan xabarlarni
+        # Local development muhitida Telegram botdan xabarlarni
         # avtomatik qabul qilish uchun background polling ni yoqamiz
-        if getattr(settings, 'DEBUG', False) and 'runserver' in sys.argv:
-            if os.environ.get('RUN_MAIN') == 'true' or '--noreload' in sys.argv:
-                try:
-                    from .telegram_utils import start_polling_in_background
-                    start_polling_in_background()
-                except Exception:
-                    pass
+        if getattr(settings, 'DEBUG', False):
+            # Agar runserver bo'lsa faqat ichki worker jarayonda ishga tushirish
+            if 'runserver' in sys.argv:
+                if os.environ.get('RUN_MAIN') == 'true' or '--noreload' in sys.argv:
+                    try:
+                        from .telegram_utils import start_polling_in_background
+                        start_polling_in_background()
+                    except Exception:
+                        pass

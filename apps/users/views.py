@@ -79,7 +79,6 @@ class RegisterView(View):
                 'bot_link': bot_link,
                 'phone': phone,
                 'otp_id': otp.pk,
-                'dev_code': otp.code if settings.DEBUG else None,
             }
             return render(request, 'users/verify_otp.html', context)
 
@@ -106,7 +105,6 @@ class VerifyOTPView(View):
             'bot_link': bot_link,
             'phone': phone or (otp.phone_number if otp else ''),
             'otp_id': otp_id or (otp.pk if otp else ''),
-            'dev_code': otp.code if (otp and settings.DEBUG) else None,
         })
 
     def post(self, request):
@@ -155,7 +153,6 @@ class VerifyOTPView(View):
                 'phone': otp.phone_number,
                 'otp_id': otp.pk,
                 'error': "Noto'g'ri kod. Iltimos, Telegram bot yuborgan kodni to'g'ri kiriting.",
-                'dev_code': otp.code if settings.DEBUG else None,
             })
 
         # OTP to'g'ri — foydalanuvchi yaratish
