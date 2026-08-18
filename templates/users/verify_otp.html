@@ -29,6 +29,18 @@
             <p class="text-xs text-gray-400 text-center">Bot sizga 6 xonali tasdiqlash kodini yuboradi</p>
         </div>
 
+        {% if dev_code %}
+        <!-- Dev mode helper -->
+        <div class="bg-amber-950/40 border border-amber-500/30 rounded-xl p-3.5 flex items-center justify-between">
+            <div class="text-xs text-amber-200">
+                <span class="font-bold">🛠 Sinov kodi:</span> <span class="font-mono font-bold text-sm tracking-widest text-amber-300">{{ dev_code }}</span>
+            </div>
+            <button type="button" onclick="fillCode('{{ dev_code }}')" class="text-xs px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 font-semibold border border-amber-500/40 transition">
+                Avto kiritish
+            </button>
+        </div>
+        {% endif %}
+
         <!-- Step 2: Enter code -->
         <div class="bg-black/20 border border-yellow-600/10 rounded-xl p-5 space-y-3">
             <div class="flex items-center gap-3">

@@ -1,21 +1,25 @@
 import json
-
+import logging
+import urllib.parse
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import login, logout
-from django.contrib.auth.hashers import make_password, check_password
+from django.contrib.auth.hashers import make_password
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView
-from django.contrib import messages
 from django.http import JsonResponse
+from django.shortcuts import redirect, render, get_object_or_404
 from django.urls import reverse_lazy
 from django.utils.decorators import method_decorator
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import CreateView, UpdateView, DetailView
-from django.shortcuts import redirect, render, get_object_or_404
+from django.views.generic import UpdateView, DetailView
 
-from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProfileUpdateForm, OTPVerifyForm
+from .forms import CustomUserCreationForm, CustomAuthenticationForm, ProfileUpdateForm
 from .models import CustomUser, TelegramOTP
-from .telegram_utils import generate_otp, send_otp
+from .telegram_utils import generate_otp, send_otp, process_telegram_update
+
+logger = logging.getLogger('django')
 
 
 class RegisterView(View):
@@ -55,24 +59,30 @@ class RegisterView(View):
                 code=code,
             )
 
-            # Agar avvalgi chat_id ma'lum bo'lsa, zudlik bilan botdan ham yuboramiz
+            # Session da saqlash
+            request.session['pending_otp_id'] = otp.pk
+            request.session['pending_phone'] = phone
+
+            # Agar avvalgi chat_id ma'lum bo'lsa, zudlik bilan botdan yuboramiz
             prev_otp = TelegramOTP.objects.filter(phone_number=phone, telegram_chat_id__isnull=False).last()
             if prev_otp and prev_otp.telegram_chat_id:
                 otp.telegram_chat_id = prev_otp.telegram_chat_id
-                otp.save()
+                otp.save(update_fields=['telegram_chat_id'])
                 send_otp(otp.telegram_chat_id, otp.code)
 
-            from django.conf import settings
-            bot_username = settings.TELEGRAM_BOT_USERNAME
-            import urllib.parse
-            start_param = urllib.parse.quote(phone.replace('+', '').replace(' ', ''))
+            bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'royalbarber_bot')
+            clean_digits = ''.join(c for c in phone if c.isdigit())
+            start_param = clean_digits[-9:] if len(clean_digits) >= 9 else clean_digits
             bot_link = f"https://t.me/{bot_username}?start={start_param}"
 
-            return render(request, 'users/verify_otp.html', {
+            context = {
                 'bot_link': bot_link,
                 'phone': phone,
                 'otp_id': otp.pk,
-            })
+                'dev_code': otp.code if settings.DEBUG else None,
+            }
+            return render(request, 'users/verify_otp.html', context)
+
         return render(request, self.template_name, {'form': form})
 
 
@@ -83,15 +93,20 @@ class VerifyOTPView(View):
     def get(self, request):
         otp_id = request.session.get('pending_otp_id')
         phone = request.session.get('pending_phone')
-        from django.conf import settings
-        bot_username = settings.TELEGRAM_BOT_USERNAME
-        import urllib.parse
-        start_param = urllib.parse.quote((phone or '').replace('+', '').replace(' ', ''))
+        bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'royalbarber_bot')
+        clean_digits = ''.join(c for c in (phone or '') if c.isdigit())
+        start_param = clean_digits[-9:] if len(clean_digits) >= 9 else clean_digits
         bot_link = f"https://t.me/{bot_username}?start={start_param}"
+
+        otp = None
+        if otp_id:
+            otp = TelegramOTP.objects.filter(pk=otp_id, is_used=False).first()
+
         return render(request, self.template_name, {
             'bot_link': bot_link,
-            'phone': phone or '',
-            'otp_id': otp_id or '',
+            'phone': phone or (otp.phone_number if otp else ''),
+            'otp_id': otp_id or (otp.pk if otp else ''),
+            'dev_code': otp.code if (otp and settings.DEBUG) else None,
         })
 
     def post(self, request):
@@ -107,17 +122,21 @@ class VerifyOTPView(View):
         # 1. ID va telefon orqali qidirish
         if otp_id and phone:
             otp = TelegramOTP.objects.filter(pk=otp_id, phone_number=phone, is_used=False).first()
-        
-        # 2. Agar topilmasa, kiritilgan kod bo'yicha qidirish
+
+        # 2. Agar topilmasa, ID bo'yicha
+        if not otp and otp_id:
+            otp = TelegramOTP.objects.filter(pk=otp_id, is_used=False).first()
+
+        # 3. Agar topilmasa, kiritilgan kod bo'yicha qidirish
         if not otp:
             otp = TelegramOTP.objects.filter(code=code, is_used=False).order_by('-created_at').first()
 
-        # 3. Agar topilmasa, oxirgi 15 daqiqadagi ishlatilmagan OTP
+        # 4. Agar topilmasa, telefon bo'yicha oxirgi OTP
         if not otp and phone:
             otp = TelegramOTP.objects.filter(phone_number=phone, is_used=False).order_by('-created_at').first()
 
         if not otp:
-            messages.error(request, "Noto'g'ri yoki ishlatilgan kod. Qaytadan urinib ko'ring.")
+            messages.error(request, "Noto'g'ri yoki eskirgan kod. Qaytadan urinib ko'ring.")
             return redirect('users:register')
 
         if not otp.is_valid():
@@ -127,16 +146,16 @@ class VerifyOTPView(View):
 
         if otp.code != code:
             messages.error(request, "Noto'g'ri tasdiqlash kodi kiritildi. Qayta urinib ko'ring.")
-            from django.conf import settings
-            bot_username = settings.TELEGRAM_BOT_USERNAME
-            import urllib.parse
-            start_param = urllib.parse.quote(otp.phone_number.replace('+', '').replace(' ', ''))
+            bot_username = getattr(settings, 'TELEGRAM_BOT_USERNAME', 'royalbarber_bot')
+            clean_digits = ''.join(c for c in otp.phone_number if c.isdigit())
+            start_param = clean_digits[-9:] if len(clean_digits) >= 9 else clean_digits
             bot_link = f"https://t.me/{bot_username}?start={start_param}"
             return render(request, self.template_name, {
                 'bot_link': bot_link,
                 'phone': otp.phone_number,
                 'otp_id': otp.pk,
                 'error': "Noto'g'ri kod. Iltimos, Telegram bot yuborgan kodni to'g'ri kiriting.",
+                'dev_code': otp.code if settings.DEBUG else None,
             })
 
         # OTP to'g'ri — foydalanuvchi yaratish
@@ -153,9 +172,9 @@ class VerifyOTPView(View):
         user.save()
 
         otp.is_used = True
-        otp.save()
+        otp.save(update_fields=['is_used'])
 
-        # Session tozalash (xavfsiz pop orqali)
+        # Session tozalash
         request.session.pop('pending_otp_id', None)
         request.session.pop('pending_phone', None)
 
@@ -167,80 +186,14 @@ class VerifyOTPView(View):
 @method_decorator(csrf_exempt, name='dispatch')
 class TelegramWebhookView(View):
     """
-    Telegram bot webhook — foydalanuvchi /start yozganda yoki raqam yuborganda
-    OTP kodni zudlik bilan Telegram orqali yuboradi.
+    Telegram bot webhook — Render/Production serverda ishlaydi.
     """
-
     def post(self, request):
-        import logging
-        from django.utils import timezone
-        import datetime
-        from .telegram_utils import send_message, send_otp
-
-        logger = logging.getLogger('django')
-
         try:
-            data = json.loads(request.body)
-            logger.info(f"[TG Webhook] Received data: {data}")
-
-            message = data.get('message') or data.get('edited_message')
-            if not message:
-                return JsonResponse({'ok': True})
-
-            chat_id = message['chat']['id']
-            text = message.get('text', '').strip()
-            contact = message.get('contact')
-            logger.info(f"[TG Webhook] chat_id={chat_id}, text={repr(text)}, contact={contact}")
-
-            # Telefon raqamni aniqlash
-            phone_target = ''
-            if contact and contact.get('phone_number'):
-                phone_target = contact['phone_number']
-            elif text.startswith('/start'):
-                parts = text.split(' ', 1)
-                if len(parts) > 1 and parts[1].strip():
-                    phone_target = parts[1].strip()
-            elif any(c.isdigit() for c in text):
-                phone_target = ''.join(c for c in text if c.isdigit())
-
-            # Faqat raqamlar
-            digits_only = ''.join(c for c in phone_target if c.isdigit())
-
-            otp = None
-            # 1. Telefon raqam bo'yicha qidirish
-            if digits_only:
-                # To'liq raqam yoki oxirgi 9 ta raqam bo'yicha
-                last9 = digits_only[-9:] if len(digits_only) >= 9 else digits_only
-                otp = TelegramOTP.objects.filter(
-                    phone_number__icontains=last9,
-                    is_used=False,
-                ).order_by('-created_at').first()
-
-            # 2. Agar telefon bo'yicha topilmasa, so'nggi 10 daqiqa ichida yaratilgan ishlatilmagan OTP ni olamiz
-            if not otp:
-                ten_mins_ago = timezone.now() - datetime.timedelta(minutes=10)
-                otp = TelegramOTP.objects.filter(
-                    is_used=False,
-                    created_at__gte=ten_mins_ago,
-                ).order_by('-created_at').first()
-
-            if otp:
-                otp.telegram_chat_id = chat_id
-                otp.save()
-                logger.info(f"[TG Webhook] Sending OTP {otp.code} to chat_id {chat_id}")
-                res = send_otp(chat_id, otp.code)
-                logger.info(f"[TG Webhook] OTP send result: {res}")
-            else:
-                logger.warning(f"[TG Webhook] No active OTP found for chat_id={chat_id}")
-                send_message(
-                    chat_id,
-                    "👋 <b>Royal Barber</b> tasdiqlash botiga xush kelibsiz!\n\n"
-                    "Iltimos, avval saytda ro'yxatdan o'ting va ko'rsatilgan havolani bosing."
-                )
+            data = json.loads(request.body.decode('utf-8'))
+            process_telegram_update(data)
         except Exception as e:
-            import logging
-            logging.getLogger('django').error(f"[TG Webhook] Exception: {e}", exc_info=True)
-
+            logger.error(f"[TG Webhook] Exception: {e}", exc_info=True)
         return JsonResponse({'ok': True})
 
 
@@ -266,7 +219,7 @@ class CustomLogoutView(View):
 
 
 class ProfileView(LoginRequiredMixin, DetailView):
-    """Foydalanuvchi profilini ko'rish (o'zining yoki boshqa foydalanuvchi)."""
+    """Foydalanuvchi profilini ko'rish."""
     model = CustomUser
     template_name = 'users/profile.html'
     context_object_name = 'profile_user'
@@ -289,7 +242,7 @@ class ProfileView(LoginRequiredMixin, DetailView):
 
 
 class ProfileUpdateView(LoginRequiredMixin, UpdateView):
-    """Profilni tahrirlash — faqat o'zining profilini tahrirlay oladi."""
+    """Profilni tahrirlash."""
     model = CustomUser
     form_class = ProfileUpdateForm
     template_name = 'users/profile_edit.html'
@@ -301,4 +254,3 @@ class ProfileUpdateView(LoginRequiredMixin, UpdateView):
     def form_valid(self, form):
         messages.success(self.request, "Profil yangilandi.")
         return super().form_valid(form)
-

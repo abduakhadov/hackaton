@@ -2,8 +2,8 @@ services:
   - type: web
     name: royal-barber
     env: python
-    buildCommand: "pip install -r requirements.txt && python manage.py collectstatic --noinput"
-    startCommand: "bash entrypoint.sh"
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 120"
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.0
@@ -12,9 +12,9 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: ".onrender.com,hackaton-eood.onrender.com"
+        value: ".onrender.com,localhost,127.0.0.1"
       - key: CSRF_TRUSTED_ORIGINS
-        value: "https://hackaton-eood.onrender.com"
+        value: "https://*.onrender.com"
       - key: TELEGRAM_BOT_TOKEN
         value: "8937609200:AAFBw4nfLHSJetvKyqZSKa6NPoTsh3Iww4k"
       - key: TELEGRAM_BOT_USERNAME

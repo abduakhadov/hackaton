@@ -22,10 +22,16 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 't')
 
 allowed_hosts_env = os.environ.get('ALLOWED_HOSTS', '*')
 ALLOWED_HOSTS = [h.strip() for h in allowed_hosts_env.split(',') if h.strip()]
+if not ALLOWED_HOSTS:
+    ALLOWED_HOSTS = ['*']
+if '.onrender.com' not in ALLOWED_HOSTS and '*' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.onrender.com')
 
 csrf_trusted = os.environ.get('CSRF_TRUSTED_ORIGINS', '')
 if csrf_trusted:
     CSRF_TRUSTED_ORIGINS = [c.strip() for c in csrf_trusted.split(',') if c.strip()]
+else:
+    CSRF_TRUSTED_ORIGINS = ['https://*.onrender.com', 'http://localhost:8000', 'http://127.0.0.1:8000']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
